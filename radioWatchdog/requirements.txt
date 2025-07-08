@@ -1,0 +1,4 @@
+pydub
+requests
+python-dotenv
+win10toast
