@@ -143,7 +143,7 @@ def enviar_resumen_telegram():
 
     try:
         for archivo in glob.glob(os.path.join(LOG_DIR, "log_*.log")):
-            with open(archivo, "r", encoding="utf-8") as f:
+            with open(archivo, "r", encoding="latin-1") as f:
                 for linea in f:
                     try:
                         # Extraer timestamp de la línea
@@ -183,25 +183,34 @@ def enviar_resumen_telegram():
 
         # Generar mensaje de resumen
         horario = "🌅 Mañana" if ahora.hour == 6 else "🌆 Tarde"
-        
         mensaje = f"{horario} - Resumen últimas 6hs:\n\n"
-        
+
+        # Calcular totales
+        total_principal = ok_count_principal + len(caidas_principal)
+        total_secundario = ok_count_secundario + len(caidas_secundario)
+
         # Resumen Stream Principal
-        if not caidas_principal:
-            mensaje += f"📡 Stream Principal: ✅ Todo OK ({ok_count_principal} chequeos)\n"
+        if total_principal > 0:
+            if not caidas_principal:
+                mensaje += f"📡 Stream Principal: ✅ Todo OK ({ok_count_principal}/{total_principal} chequeos)\n"
+            else:
+                primer_error_principal = min(caidas_principal) if caidas_principal else "N/A"
+                mensaje += f"📡 Stream Principal: ✅ {ok_count_principal}/{total_principal} OK | ❌ {len(caidas_principal)} errores\n"
+                mensaje += f"   🕐 Primer error: {primer_error_principal}\n"
         else:
-            primer_error_principal = min(caidas_principal) if caidas_principal else "N/A"
-            mensaje += f"📡 Stream Principal: ✅ {ok_count_principal} OK | ❌ {len(caidas_principal)} errores\n"
-            mensaje += f"   🕐 Primer error: {primer_error_principal}\n"
-        
+            mensaje += f"📡 Stream Principal: ❔ No se encontraron registros.\n"
+
         # Resumen Stream Secundario (solo si está configurado)
         if STREAM2_URL:
-            if not caidas_secundario:
-                mensaje += f"📻 Stream Secundario: ✅ Todo OK ({ok_count_secundario} chequeos)\n"
+            if total_secundario > 0:
+                if not caidas_secundario:
+                    mensaje += f"📻 Stream Secundario: ✅ Todo OK ({ok_count_secundario}/{total_secundario} chequeos)\n"
+                else:
+                    primer_error_secundario = min(caidas_secundario) if caidas_secundario else "N/A"
+                    mensaje += f"📻 Stream Secundario: ✅ {ok_count_secundario}/{total_secundario} OK | ❌ {len(caidas_secundario)} errores\n"
+                    mensaje += f"   🕐 Primer error: {primer_error_secundario}\n"
             else:
-                primer_error_secundario = min(caidas_secundario) if caidas_secundario else "N/A"
-                mensaje += f"📻 Stream Secundario: ✅ {ok_count_secundario} OK | ❌ {len(caidas_secundario)} errores\n"
-                mensaje += f"   🕐 Primer error: {primer_error_secundario}\n"
+                mensaje += f"📻 Stream Secundario: ❔ No se encontraron registros.\n"
         else:
             mensaje += "📻 Stream Secundario: No configurado\n"
 
